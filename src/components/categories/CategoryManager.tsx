@@ -1,3 +1,5 @@
+'use client';
+
 import { useState, useEffect } from 'react';
 import { Category, CategoryType } from '@/types/category';
 import { categoryService } from '@/services/categoryService';
@@ -28,28 +30,24 @@ export function CategoryManager() {
       setLoading(true);
       setError(null);
       
-      console.log('CategoryManager - Iniciando carregamento de categorias...');
-      const categories = await categoryService.getCategories();
-      console.log('CategoryManager - Categorias retornadas pelo serviço:', JSON.stringify(categories));
-      
-      if (Array.isArray(categories) && categories.length > 0) {
-        console.log('CategoryManager - Definindo categorias no estado:', categories.length);
-        setCategories(categories);
-      } else {
-        console.log('CategoryManager - Nenhuma categoria retornada, usando padrões');
-        // Em caso de erro ou nenhuma categoria, usar categorias padrão
-        const defaultCategories: Category[] = [
-          { id: '1', name: 'Salário', type: 'income' as CategoryType, isDefault: true },
-          { id: '2', name: 'Freelance', type: 'income' as CategoryType, isDefault: true },
-          { id: '3', name: 'Moradia', type: 'expense' as CategoryType, isDefault: true },
-          { id: '4', name: 'Alimentação', type: 'expense' as CategoryType, isDefault: true },
-          { id: '5', name: 'Ações', type: 'investment' as CategoryType, isDefault: true }
-        ];
-        console.log('CategoryManager - Usando categorias padrão:', defaultCategories);
-        setCategories(defaultCategories);
+      if (typeof window !== 'undefined') {
+        const categories = await categoryService.getCategories();
+        if (Array.isArray(categories) && categories.length > 0) {
+          setCategories(categories);
+        } else {
+          // Em caso de erro ou nenhuma categoria, usar categorias padrão
+          const defaultCategories: Category[] = [
+            { id: '1', name: 'Salário', type: 'income' as CategoryType, isDefault: true },
+            { id: '2', name: 'Freelance', type: 'income' as CategoryType, isDefault: true },
+            { id: '3', name: 'Moradia', type: 'expense' as CategoryType, isDefault: true },
+            { id: '4', name: 'Alimentação', type: 'expense' as CategoryType, isDefault: true },
+            { id: '5', name: 'Ações', type: 'investment' as CategoryType, isDefault: true }
+          ];
+          setCategories(defaultCategories);
+        }
       }
     } catch (err) {
-      console.error('CategoryManager - Erro ao carregar categorias:', err);
+      console.error('Erro ao carregar categorias:', err);
       setError('Erro ao carregar categorias');
       // Em caso de erro, usar categorias padrão
       const defaultCategories: Category[] = [
@@ -59,7 +57,6 @@ export function CategoryManager() {
         { id: '4', name: 'Alimentação', type: 'expense' as CategoryType, isDefault: true },
         { id: '5', name: 'Ações', type: 'investment' as CategoryType, isDefault: true }
       ];
-      console.log('CategoryManager - Usando categorias padrão após erro:', defaultCategories);
       setCategories(defaultCategories);
     } finally {
       setLoading(false);

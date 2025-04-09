@@ -20,9 +20,14 @@ export default function Header({ onToggleSidebar }: { onToggleSidebar?: () => vo
 
   useEffect(() => {
     if (typeof window !== 'undefined') {
-      const storedUser = localStorage.getItem('user');
-      if (storedUser) {
-        setUserInfo(JSON.parse(storedUser));
+      const storedName = localStorage.getItem('userName');
+      const storedEmail = localStorage.getItem('userEmail');
+      
+      if (storedName && storedEmail) {
+        setUserInfo({
+          name: storedName,
+          email: storedEmail
+        });
       }
     }
   }, []);
@@ -38,14 +43,7 @@ export default function Header({ onToggleSidebar }: { onToggleSidebar?: () => vo
         const storedName = localStorage.getItem('userName');
         const storedEmail = localStorage.getItem('userEmail');
         
-        console.log('Header: Dados do localStorage:', {
-          userId,
-          storedName,
-          storedEmail
-        });
-        
         if (!userId) {
-          console.warn('Header: userId não encontrado no localStorage');
           if (storedName && storedEmail) {
             setUserInfo({
               name: storedName,
@@ -58,9 +56,7 @@ export default function Header({ onToggleSidebar }: { onToggleSidebar?: () => vo
         
         // Buscar informações do usuário usando o userService
         try {
-          console.log('Header: Buscando informações do usuário via userService');
           const userData = await userService.getUserById(userId);
-          console.log('Header: Dados do usuário obtidos:', userData);
           
           if (userData) {
             const updatedUserInfo = {
@@ -68,7 +64,6 @@ export default function Header({ onToggleSidebar }: { onToggleSidebar?: () => vo
               email: userData.email
             };
             
-            console.log('Header: Informações atualizadas:', updatedUserInfo);
             setUserInfo(updatedUserInfo);
             
             // Atualizar localStorage
@@ -76,11 +71,10 @@ export default function Header({ onToggleSidebar }: { onToggleSidebar?: () => vo
             localStorage.setItem('userEmail', updatedUserInfo.email);
           }
         } catch (apiError) {
-          console.error('Header: Erro ao buscar dados do usuário via userService:', apiError);
+          console.error('Erro ao buscar dados do usuário via userService:', apiError);
           
           // Usar dados do localStorage como fallback
           if (storedName && storedEmail) {
-            console.log('Header: Usando informações do localStorage como fallback');
             setUserInfo({
               name: storedName,
               email: storedEmail
@@ -90,7 +84,7 @@ export default function Header({ onToggleSidebar }: { onToggleSidebar?: () => vo
           }
         }
       } catch (error) {
-        console.error('Header: Erro ao buscar informações do usuário:', error);
+        console.error('Erro ao buscar informações do usuário:', error);
         setError(error instanceof Error ? error.message : 'Erro ao carregar informações do usuário');
       } finally {
         setIsLoading(false);
@@ -102,8 +96,17 @@ export default function Header({ onToggleSidebar }: { onToggleSidebar?: () => vo
 
   const handleLogout = () => {
     if (typeof window !== 'undefined') {
+      // Usar o serviço de autenticação para fazer logout
+      authService.logout();
+      
+      // Limpar todos os dados do usuário do localStorage
+      localStorage.removeItem('authToken');
+      localStorage.removeItem('userId');
+      localStorage.removeItem('userName');
+      localStorage.removeItem('userEmail');
       localStorage.removeItem('user');
-      localStorage.removeItem('token');
+      
+      // Redirecionar para a página de login
       router.push('/login');
     }
   };
