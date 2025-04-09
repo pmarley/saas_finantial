@@ -2,6 +2,8 @@
 const nextConfig = {
   reactStrictMode: true,
   swcMinify: true,
+  output: 'standalone',
+  poweredByHeader: false,
   async rewrites() {
     return [
       {
