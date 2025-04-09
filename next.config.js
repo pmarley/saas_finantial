@@ -4,6 +4,9 @@ const nextConfig = {
   swcMinify: true,
   output: 'standalone',
   poweredByHeader: false,
+  distDir: '.next',
+  generateEtags: false,
+  compress: true,
   async rewrites() {
     return [
       {
