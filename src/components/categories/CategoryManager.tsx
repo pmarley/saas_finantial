@@ -70,6 +70,17 @@ export function CategoryManager() {
     e.preventDefault();
     try {
       setError(null);
+      
+      // Verificar se já existe uma categoria com o mesmo nome
+      const existingCategory = categories.find(
+        cat => cat.name.toLowerCase() === newCategory.name.toLowerCase()
+      );
+      
+      if (existingCategory) {
+        setError(`Já existe uma categoria com o nome "${newCategory.name}". Por favor, escolha outro nome.`);
+        return;
+      }
+      
       const result = await categoryService.createCategory(newCategory);
       console.log('Categoria criada:', result);
       setNewCategory({ name: '', type: 'expense', color: '#000000' });
@@ -85,6 +96,17 @@ export function CategoryManager() {
     if (!editingCategory) return;
 
     try {
+      // Verificar se já existe outra categoria com o mesmo nome (excluindo a categoria atual)
+      const existingCategory = categories.find(
+        cat => cat.id !== editingCategory.id && 
+              cat.name.toLowerCase() === editingCategory.name.toLowerCase()
+      );
+      
+      if (existingCategory) {
+        setError(`Já existe uma categoria com o nome "${editingCategory.name}". Por favor, escolha outro nome.`);
+        return;
+      }
+      
       const result = await categoryService.updateCategory(editingCategory.id, editingCategory);
       console.log('Categoria atualizada:', result);
       setEditingCategory(null);

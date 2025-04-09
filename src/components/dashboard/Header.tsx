@@ -163,10 +163,6 @@ export default function Header({ onToggleSidebar }: { onToggleSidebar?: () => vo
                     <span className="text-indigo-600 font-medium">{getUserInitial()}</span>
                   )}
                 </div>
-                <div className="hidden md:block text-left">
-                  <p className="text-sm font-medium text-gray-700">{userInfo.name}</p>
-                  <p className="text-xs text-gray-500">{userInfo.email}</p>
-                </div>
               </button>
               {isOpen && (
                 <div className="absolute right-0 mt-2 w-64 bg-white rounded-md shadow-lg py-1 z-10">

@@ -27,6 +27,7 @@ export default function NewTransactionModal({
   const [success, setSuccess] = useState(false);
   const [categories, setCategories] = useState<Category[]>([]);
   const [loading, setLoading] = useState(true);
+  const [availableTypes, setAvailableTypes] = useState<Transaction['type'][]>([]);
 
   useEffect(() => {
     if (isOpen) {
@@ -34,13 +35,52 @@ export default function NewTransactionModal({
     }
   }, [isOpen]);
 
+  // Efeito para atualizar o tipo selecionado quando as categorias são carregadas
+  useEffect(() => {
+    if (categories.length > 0) {
+      // Extrair tipos únicos das categorias disponíveis
+      const types = Array.from(new Set(categories.map(cat => cat.type))) as Transaction['type'][];
+      console.log('NewTransactionModal - Tipos disponíveis:', types);
+      setAvailableTypes(types);
+      
+      // Se o tipo atual não está disponível, mudar para o primeiro tipo disponível
+      if (!types.includes(type)) {
+        console.log(`NewTransactionModal - Tipo atual ${type} não está disponível, mudando para ${types[0]}`);
+        setType(types[0]);
+        setCategory(''); // Resetar categoria ao mudar o tipo
+      }
+    }
+  }, [categories]);
+
   const loadCategories = async () => {
     try {
       setLoading(true);
+      setError(null);
+      
+      // Verificar se o usuário está autenticado
+      const userId = localStorage.getItem('userId');
+      console.log('NewTransactionModal - userId:', userId);
+      
+      if (!userId) {
+        console.error('NewTransactionModal - Usuário não autenticado');
+        setError('Usuário não autenticado. Por favor, faça login novamente.');
+        return;
+      }
+      
+      console.log('NewTransactionModal - Carregando categorias para o modal de transação...');
       const data = await categoryService.getCategories();
-      setCategories(data);
+      console.log('NewTransactionModal - Categorias carregadas:', data);
+      
+      if (Array.isArray(data) && data.length > 0) {
+        console.log('NewTransactionModal - Definindo categorias no estado:', data.length);
+        setCategories(data);
+      } else {
+        console.warn('NewTransactionModal - Nenhuma categoria retornada ou formato inválido');
+        setError('Não foi possível carregar as categorias. Por favor, tente novamente.');
+      }
     } catch (err) {
-      console.error('Erro ao carregar categorias:', err);
+      console.error('NewTransactionModal - Erro ao carregar categorias:', err);
+      setError('Erro ao carregar categorias. Por favor, tente novamente.');
     } finally {
       setLoading(false);
     }
@@ -89,6 +129,8 @@ export default function NewTransactionModal({
 
   // Filtrar categorias pelo tipo selecionado
   const filteredCategories = categories.filter(cat => cat.type === type);
+  console.log(`NewTransactionModal - Categorias filtradas para o tipo ${type}:`, filteredCategories);
+  console.log('NewTransactionModal - Todas as categorias:', categories);
 
   if (!isOpen) return null;
 
@@ -144,7 +186,9 @@ export default function NewTransactionModal({
             <select
               value={type}
               onChange={(e) => {
-                setType(e.target.value as Transaction['type']);
+                const newType = e.target.value as Transaction['type'];
+                console.log(`NewTransactionModal - Tipo alterado para: ${newType}`);
+                setType(newType);
                 setCategory(''); // Reset category when type changes
               }}
               className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500"
@@ -166,12 +210,24 @@ export default function NewTransactionModal({
               disabled={loading}
             >
               <option value="">Selecione uma categoria</option>
-              {filteredCategories.map((cat) => (
-                <option key={cat.id} value={cat.name}>
-                  {cat.name}
+              {filteredCategories.length > 0 ? (
+                filteredCategories.map((cat) => (
+                  <option key={cat.id} value={cat.name}>
+                    {cat.name}
+                  </option>
+                ))
+              ) : (
+                <option value="" disabled>
+                  Nenhuma categoria disponível para este tipo
                 </option>
-              ))}
+              )}
             </select>
+            {loading && (
+              <p className="mt-1 text-sm text-gray-500">Carregando categorias...</p>
+            )}
+            {error && (
+              <p className="mt-1 text-sm text-red-500">{error}</p>
+            )}
           </div>
           
           <div>

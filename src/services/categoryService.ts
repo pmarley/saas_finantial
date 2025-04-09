@@ -68,10 +68,10 @@ export const categoryService = {
   async getCategories(): Promise<Category[]> {
     try {
       const userId = authService.getUserId();
-      console.log('getCategories - userId:', userId);
+      console.log('categoryService.getCategories - userId:', userId);
       
       if (!userId) {
-        console.warn('Usuário não autenticado, retornando categorias padrão');
+        console.warn('categoryService.getCategories - Usuário não autenticado, retornando categorias padrão');
         return DEFAULT_CATEGORIES.map((category, index) => ({
           ...category,
           id: `default-${index}`
@@ -79,7 +79,7 @@ export const categoryService = {
       }
 
       const url = `${BASE_URL}/category/getCategories?userId=${userId}`;
-      console.log('getCategories - URL da requisição:', url);
+      console.log('categoryService.getCategories - URL da requisição:', url);
       
       const response = await fetch(
         url,
@@ -87,39 +87,45 @@ export const categoryService = {
           method: 'GET',
           headers: {
             'Content-Type': 'application/json',
+            'Authorization': `Bearer ${localStorage.getItem('authToken') || ''}`
           },
         }
       );
 
-      console.log('getCategories - Status da resposta:', response.status);
+      console.log('categoryService.getCategories - Status da resposta:', response.status);
       
       if (!response.ok) {
-        console.error('getCategories - Resposta não OK:', response.status, response.statusText);
+        console.error('categoryService.getCategories - Resposta não OK:', response.status, response.statusText);
         throw new Error('Falha ao buscar categorias');
       }
 
       const data = await response.json();
-      console.log('getCategories - Resposta da API (bruta):', JSON.stringify(data));
+      console.log('categoryService.getCategories - Resposta da API (bruta):', JSON.stringify(data));
       
       let rawCategories: any[] = [];
 
       if (Array.isArray(data)) {
         rawCategories = data;
-        console.log('getCategories - Dados são um array direto:', rawCategories);
+        console.log('categoryService.getCategories - Dados são um array direto:', rawCategories);
       } else if (data?.data && Array.isArray(data.data)) {
         rawCategories = data.data;
-        console.log('getCategories - Dados estão em data.data:', rawCategories);
+        console.log('categoryService.getCategories - Dados estão em data.data:', rawCategories);
       } else if (data?.categories && Array.isArray(data.categories)) {
         rawCategories = data.categories;
-        console.log('getCategories - Dados estão em data.categories:', rawCategories);
+        console.log('categoryService.getCategories - Dados estão em data.categories:', rawCategories);
       } else if (data?.transactions && Array.isArray(data.transactions)) {
         rawCategories = data.transactions;
-        console.log('getCategories - Dados estão em data.transactions:', rawCategories);
+        console.log('categoryService.getCategories - Dados estão em data.transactions:', rawCategories);
       } else {
-        console.log('getCategories - Formato de dados não reconhecido:', data);
+        console.log('categoryService.getCategories - Formato de dados não reconhecido:', data);
+        // Se não conseguimos extrair categorias, retornar as padrão
+        return DEFAULT_CATEGORIES.map((category, index) => ({
+          ...category,
+          id: `default-${index}`
+        }));
       }
 
-      console.log('getCategories - Categorias brutas antes da validação:', rawCategories);
+      console.log('categoryService.getCategories - Categorias brutas antes da validação:', rawCategories);
       
       const categories: Category[] = rawCategories
         .filter(isValidCategory)
@@ -132,12 +138,25 @@ export const categoryService = {
           userId: String(category.userId || userId)
         }));
       
-      console.log('getCategories - Categorias após validação e mapeamento:', categories);
+      console.log('categoryService.getCategories - Categorias após validação e mapeamento:', categories);
+
+      // Se não houver categorias válidas, retornar as padrão
+      if (categories.length === 0) {
+        console.warn('categoryService.getCategories - Nenhuma categoria válida encontrada, retornando padrões');
+        return DEFAULT_CATEGORIES.map((category, index) => ({
+          ...category,
+          id: `default-${index}`
+        }));
+      }
 
       return categories;
     } catch (error) {
-      console.error('getCategories - Erro ao buscar categorias:', error);
-      return [];
+      console.error('categoryService.getCategories - Erro ao buscar categorias:', error);
+      // Em caso de erro, retornar categorias padrão
+      return DEFAULT_CATEGORIES.map((category, index) => ({
+        ...category,
+        id: `default-${index}`
+      }));
     }
   },
 

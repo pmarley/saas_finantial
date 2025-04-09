@@ -142,10 +142,10 @@ export default function UserInfo() {
           <p className="text-red-600">{error}</p>
         </div>
         
-        {/* Botões de teste de conexão */}
         <div className="mt-4">
           <h3 className="text-lg font-medium text-gray-900 mb-2">Teste de Conexão</h3>
           <div className="flex flex-wrap gap-2">
+            {/* Botões de teste de conexão comentados
             <button
               onClick={() => testConnection(true)}
               className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700"
@@ -213,6 +213,7 @@ export default function UserInfo() {
             >
               Testar com Proxy CORS
             </button>
+            */}
           </div>
           {connectionStatus && (
             <div className="mt-2 p-2 bg-gray-100 rounded">
