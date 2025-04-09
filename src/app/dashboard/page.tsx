@@ -7,6 +7,7 @@ import UserInfo from '@/components/dashboard/UserInfo';
 import { Transaction } from '@/types/transaction';
 import { userService } from '@/services/api';
 import ErrorBoundary from '@/components/ErrorBoundary';
+import { TooltipProvider } from '@/components/ui/tooltip';
 
 type Summary = {
   current: {
@@ -264,174 +265,176 @@ export default function DashboardPage() {
   }
 
   return (
-    <ErrorBoundary>
-      <div className="space-y-6">
-        <div className="flex justify-between items-center">
-          <h1 className="text-2xl font-semibold text-gray-900">Dashboard</h1>
-          <div className="flex space-x-4">
-            <button
-              onClick={() => testConnection(false, true)}
-              className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700"
-            >
-              Testar Conexão Normal
-            </button>
-            <button
-              onClick={() => testConnection(true, true)}
-              className="px-4 py-2 bg-green-600 text-white rounded-md hover:bg-green-700"
-            >
-              Testar com No-CORS
-            </button>
-            <button
-              onClick={() => testConnection(false, false)}
-              className="px-4 py-2 bg-yellow-600 text-white rounded-md hover:bg-yellow-700"
-            >
-              Testar Sem Auth
-            </button>
-            <button
-              onClick={() => fetchData()}
-              className="px-4 py-2 bg-purple-600 text-white rounded-md hover:bg-purple-700"
-            >
-              Recarregar com No-CORS
-            </button>
-            <button
-              onClick={async () => {
-                try {
-                  setConnectionStatus('Testando conexão com proxy CORS...');
-                  const userId = localStorage.getItem('userId');
-                  if (!userId) {
-                    setConnectionStatus('Usuário não autenticado');
-                    return;
-                  }
-                  
-                  const corsProxyUrl = `https://cors-anywhere.herokuapp.com/https://truemetrics-n8n-n8n.b5glig.easypanel.host/webhook/transactions/data?userId=${userId}`;
-                  const response = await fetch(corsProxyUrl, {
-                    method: 'GET',
-                    headers: {
-                      'Content-Type': 'application/json',
-                      'Origin': 'http://localhost:3000',
-                    },
-                  });
-                  
-                  if (response.ok) {
-                    const data = await response.json();
-                    setConnectionStatus(`Conexão bem-sucedida via proxy CORS: ${JSON.stringify(data).substring(0, 100)}...`);
-                    console.log('Teste de conexão com proxy CORS bem-sucedido:', data);
-                    
-                    // Processar os dados recebidos
-                    if (data && Array.isArray(data)) {
-                      const transactions = data.map((t: any) => ({
-                        id: t.id || String(Date.now()) + Math.random().toString(36).substr(2, 9),
-                        description: t.description || 'Transação sem descrição',
-                        amount: typeof t.amount === 'number' ? t.amount : 0,
-                        date: t.date || new Date().toISOString(),
-                        type: t.type === 'income' || t.type === 'expense' || t.type === 'investment' 
-                          ? t.type 
-                          : 'expense',
-                        category: t.category || 'Sem categoria'
-                      }));
-                      
-                      setTransactions(transactions);
-                      calculateSummary(transactions);
+    <TooltipProvider>
+      <ErrorBoundary>
+        <div className="space-y-6">
+          <div className="flex justify-between items-center">
+            <h1 className="text-2xl font-semibold text-gray-900">Dashboard</h1>
+            <div className="flex space-x-4">
+              <button
+                onClick={() => testConnection(false, true)}
+                className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700"
+              >
+                Testar Conexão Normal
+              </button>
+              <button
+                onClick={() => testConnection(true, true)}
+                className="px-4 py-2 bg-green-600 text-white rounded-md hover:bg-green-700"
+              >
+                Testar com No-CORS
+              </button>
+              <button
+                onClick={() => testConnection(false, false)}
+                className="px-4 py-2 bg-yellow-600 text-white rounded-md hover:bg-yellow-700"
+              >
+                Testar Sem Auth
+              </button>
+              <button
+                onClick={() => fetchData()}
+                className="px-4 py-2 bg-purple-600 text-white rounded-md hover:bg-purple-700"
+              >
+                Recarregar com No-CORS
+              </button>
+              <button
+                onClick={async () => {
+                  try {
+                    setConnectionStatus('Testando conexão com proxy CORS...');
+                    const userId = localStorage.getItem('userId');
+                    if (!userId) {
+                      setConnectionStatus('Usuário não autenticado');
+                      return;
                     }
-                  } else {
-                    setConnectionStatus(`Falha na conexão via proxy CORS: ${response.status}`);
-                    console.error('Falha no teste de conexão com proxy CORS:', response.status);
+                    
+                    const corsProxyUrl = `https://cors-anywhere.herokuapp.com/https://truemetrics-n8n-n8n.b5glig.easypanel.host/webhook/transactions/data?userId=${userId}`;
+                    const response = await fetch(corsProxyUrl, {
+                      method: 'GET',
+                      headers: {
+                        'Content-Type': 'application/json',
+                        'Origin': 'http://localhost:3000',
+                      },
+                    });
+                    
+                    if (response.ok) {
+                      const data = await response.json();
+                      setConnectionStatus(`Conexão bem-sucedida via proxy CORS: ${JSON.stringify(data).substring(0, 100)}...`);
+                      console.log('Teste de conexão com proxy CORS bem-sucedido:', data);
+                      
+                      // Processar os dados recebidos
+                      if (data && Array.isArray(data)) {
+                        const transactions = data.map((t: any) => ({
+                          id: t.id || String(Date.now()) + Math.random().toString(36).substr(2, 9),
+                          description: t.description || 'Transação sem descrição',
+                          amount: typeof t.amount === 'number' ? t.amount : 0,
+                          date: t.date || new Date().toISOString(),
+                          type: t.type === 'income' || t.type === 'expense' || t.type === 'investment' 
+                            ? t.type 
+                            : 'expense',
+                          category: t.category || 'Sem categoria'
+                        }));
+                        
+                        setTransactions(transactions);
+                        calculateSummary(transactions);
+                      }
+                    } else {
+                      setConnectionStatus(`Falha na conexão via proxy CORS: ${response.status}`);
+                      console.error('Falha no teste de conexão com proxy CORS:', response.status);
+                    }
+                  } catch (err) {
+                    const errorMessage = err instanceof Error ? err.message : 'Erro desconhecido';
+                    setConnectionStatus(`Erro ao testar conexão com proxy CORS: ${errorMessage}`);
+                    console.error('Erro ao testar conexão com proxy CORS:', err);
                   }
-                } catch (err) {
-                  const errorMessage = err instanceof Error ? err.message : 'Erro desconhecido';
-                  setConnectionStatus(`Erro ao testar conexão com proxy CORS: ${errorMessage}`);
-                  console.error('Erro ao testar conexão com proxy CORS:', err);
-                }
-              }}
-              className="px-4 py-2 bg-indigo-600 text-white rounded-md hover:bg-indigo-700"
-            >
-              Testar com Proxy CORS
-            </button>
-          </div>
-        </div>
-
-        {connectionStatus && (
-          <div className="bg-white rounded-lg shadow p-4">
-            <p className="text-sm">{connectionStatus}</p>
-          </div>
-        )}
-
-        {error && (
-          <div className="bg-red-50 border border-red-200 rounded-lg p-4">
-            <p className="text-red-600">{error}</p>
-          </div>
-        )}
-
-        {apiStatus !== 'connected' && (
-          <div className={`p-4 rounded-md ${
-            apiStatus === 'error' ? 'bg-red-100 text-red-700' : 'bg-yellow-100 text-yellow-700'
-          }`}>
-            <p>
-              {apiStatus === 'error' 
-                ? 'Erro de conexão com o servidor. Tentando reconectar...' 
-                : 'Verificando conexão com o servidor...'}
-            </p>
-          </div>
-        )}
-
-        {loading ? (
-          <div className="flex justify-center items-center h-64">
-            <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-indigo-500"></div>
-          </div>
-        ) : (
-          <div className="space-y-6">
-            {/* Resumo */}
-            <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
-              {/* Receitas */}
-              <div className="bg-white rounded-lg shadow p-6">
-                <h3 className="text-sm font-medium text-gray-500">Receitas</h3>
-                <p className="mt-2 text-3xl font-semibold text-green-600">
-                  {formatCurrency(summary.current.income)}
-                </p>
-                <p className={`mt-1 text-sm ${summary.changes.income >= 0 ? 'text-green-600' : 'text-red-600'}`}>
-                  {summary.changes.income >= 0 ? '↑' : '↓'} {Math.abs(summary.changes.income).toFixed(1)}% vs mês anterior
-                </p>
-              </div>
-
-              {/* Despesas */}
-              <div className="bg-white rounded-lg shadow p-6">
-                <h3 className="text-sm font-medium text-gray-500">Despesas</h3>
-                <p className="mt-2 text-3xl font-semibold text-red-600">
-                  {formatCurrency(summary.current.expenses)}
-                </p>
-                <p className={`mt-1 text-sm ${summary.changes.expenses <= 0 ? 'text-green-600' : 'text-red-600'}`}>
-                  {summary.changes.expenses <= 0 ? '↓' : '↑'} {Math.abs(summary.changes.expenses).toFixed(1)}% vs mês anterior
-                </p>
-              </div>
-
-              {/* Investimentos */}
-              <div className="bg-white rounded-lg shadow p-6">
-                <h3 className="text-sm font-medium text-gray-500">Investimentos</h3>
-                <p className="mt-2 text-3xl font-semibold text-blue-600">
-                  {formatCurrency(summary.current.investments)}
-                </p>
-                <p className={`mt-1 text-sm ${summary.changes.investments >= 0 ? 'text-green-600' : 'text-red-600'}`}>
-                  {summary.changes.investments >= 0 ? '↑' : '↓'} {Math.abs(summary.changes.investments).toFixed(1)}% vs mês anterior
-                </p>
-              </div>
-
-              {/* Saldo */}
-              <div className="bg-white rounded-lg shadow p-6">
-                <h3 className="text-sm font-medium text-gray-500">Saldo</h3>
-                <p className={`mt-2 text-3xl font-semibold ${summary.current.balance >= 0 ? 'text-green-600' : 'text-red-600'}`}>
-                  {formatCurrency(summary.current.balance)}
-                </p>
-                <p className="mt-1 text-sm text-gray-500">
-                  Saldo atual
-                </p>
-              </div>
+                }}
+                className="px-4 py-2 bg-indigo-600 text-white rounded-md hover:bg-indigo-700"
+              >
+                Testar com Proxy CORS
+              </button>
             </div>
-
-            {/* Transações Recentes */}
-            <RecentTransactions transactions={transactions} />
           </div>
-        )}
-      </div>
-    </ErrorBoundary>
+
+          {connectionStatus && (
+            <div className="bg-white rounded-lg shadow p-4">
+              <p className="text-sm">{connectionStatus}</p>
+            </div>
+          )}
+
+          {error && (
+            <div className="bg-red-50 border border-red-200 rounded-lg p-4">
+              <p className="text-red-600">{error}</p>
+            </div>
+          )}
+
+          {apiStatus !== 'connected' && (
+            <div className={`p-4 rounded-md ${
+              apiStatus === 'error' ? 'bg-red-100 text-red-700' : 'bg-yellow-100 text-yellow-700'
+            }`}>
+              <p>
+                {apiStatus === 'error' 
+                  ? 'Erro de conexão com o servidor. Tentando reconectar...' 
+                  : 'Verificando conexão com o servidor...'}
+              </p>
+            </div>
+          )}
+
+          {loading ? (
+            <div className="flex justify-center items-center h-64">
+              <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-indigo-500"></div>
+            </div>
+          ) : (
+            <div className="space-y-6">
+              {/* Resumo */}
+              <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
+                {/* Receitas */}
+                <div className="bg-white rounded-lg shadow p-6">
+                  <h3 className="text-sm font-medium text-gray-500">Receitas</h3>
+                  <p className="mt-2 text-3xl font-semibold text-green-600">
+                    {formatCurrency(summary.current.income)}
+                  </p>
+                  <p className={`mt-1 text-sm ${summary.changes.income >= 0 ? 'text-green-600' : 'text-red-600'}`}>
+                    {summary.changes.income >= 0 ? '↑' : '↓'} {Math.abs(summary.changes.income).toFixed(1)}% vs mês anterior
+                  </p>
+                </div>
+
+                {/* Despesas */}
+                <div className="bg-white rounded-lg shadow p-6">
+                  <h3 className="text-sm font-medium text-gray-500">Despesas</h3>
+                  <p className="mt-2 text-3xl font-semibold text-red-600">
+                    {formatCurrency(summary.current.expenses)}
+                  </p>
+                  <p className={`mt-1 text-sm ${summary.changes.expenses <= 0 ? 'text-green-600' : 'text-red-600'}`}>
+                    {summary.changes.expenses <= 0 ? '↓' : '↑'} {Math.abs(summary.changes.expenses).toFixed(1)}% vs mês anterior
+                  </p>
+                </div>
+
+                {/* Investimentos */}
+                <div className="bg-white rounded-lg shadow p-6">
+                  <h3 className="text-sm font-medium text-gray-500">Investimentos</h3>
+                  <p className="mt-2 text-3xl font-semibold text-blue-600">
+                    {formatCurrency(summary.current.investments)}
+                  </p>
+                  <p className={`mt-1 text-sm ${summary.changes.investments >= 0 ? 'text-green-600' : 'text-red-600'}`}>
+                    {summary.changes.investments >= 0 ? '↑' : '↓'} {Math.abs(summary.changes.investments).toFixed(1)}% vs mês anterior
+                  </p>
+                </div>
+
+                {/* Saldo */}
+                <div className="bg-white rounded-lg shadow p-6">
+                  <h3 className="text-sm font-medium text-gray-500">Saldo</h3>
+                  <p className={`mt-2 text-3xl font-semibold ${summary.current.balance >= 0 ? 'text-green-600' : 'text-red-600'}`}>
+                    {formatCurrency(summary.current.balance)}
+                  </p>
+                  <p className="mt-1 text-sm text-gray-500">
+                    Saldo atual
+                  </p>
+                </div>
+              </div>
+
+              {/* Transações Recentes */}
+              <RecentTransactions transactions={transactions} />
+            </div>
+          )}
+        </div>
+      </ErrorBoundary>
+    </TooltipProvider>
   );
 } 

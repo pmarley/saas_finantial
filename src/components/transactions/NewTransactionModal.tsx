@@ -1,8 +1,10 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { transactionService } from '@/services/api';
 import { Transaction } from '@/types/transaction';
+import { Category } from '@/types/category';
+import { categoryService } from '@/services/categoryService';
 
 type NewTransactionModalProps = {
   isOpen: boolean;
@@ -23,6 +25,26 @@ export default function NewTransactionModal({
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState(false);
+  const [categories, setCategories] = useState<Category[]>([]);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    if (isOpen) {
+      loadCategories();
+    }
+  }, [isOpen]);
+
+  const loadCategories = async () => {
+    try {
+      setLoading(true);
+      const data = await categoryService.getCategories();
+      setCategories(data);
+    } catch (err) {
+      console.error('Erro ao carregar categorias:', err);
+    } finally {
+      setLoading(false);
+    }
+  };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -38,7 +60,7 @@ export default function NewTransactionModal({
         date,
       });
       
-      if (result.success) {
+      if (result) {
         setSuccess(true);
         // Limpar o formulário
         setDescription('');
@@ -56,7 +78,7 @@ export default function NewTransactionModal({
           setSuccess(false);
         }, 1500);
       } else {
-        setError(result.message || 'Erro ao criar transação');
+        setError('Erro ao criar transação');
       }
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Erro ao criar transação');
@@ -64,6 +86,9 @@ export default function NewTransactionModal({
       setIsSubmitting(false);
     }
   };
+
+  // Filtrar categorias pelo tipo selecionado
+  const filteredCategories = categories.filter(cat => cat.type === type);
 
   if (!isOpen) return null;
 
@@ -118,7 +143,10 @@ export default function NewTransactionModal({
             </label>
             <select
               value={type}
-              onChange={(e) => setType(e.target.value as Transaction['type'])}
+              onChange={(e) => {
+                setType(e.target.value as Transaction['type']);
+                setCategory(''); // Reset category when type changes
+              }}
               className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500"
             >
               <option value="income">Receita</option>
@@ -129,14 +157,21 @@ export default function NewTransactionModal({
           
           <div>
             <label className="block text-sm font-medium text-gray-700">
-              Categoria (opcional)
+              Categoria
             </label>
-            <input
-              type="text"
+            <select
               value={category}
               onChange={(e) => setCategory(e.target.value)}
               className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500"
-            />
+              disabled={loading}
+            >
+              <option value="">Selecione uma categoria</option>
+              {filteredCategories.map((cat) => (
+                <option key={cat.id} value={cat.name}>
+                  {cat.name}
+                </option>
+              ))}
+            </select>
           </div>
           
           <div>
@@ -152,7 +187,7 @@ export default function NewTransactionModal({
             />
           </div>
           
-          <div className="flex justify-end space-x-3 pt-4">
+          <div className="flex justify-end space-x-2">
             <button
               type="button"
               onClick={onClose}

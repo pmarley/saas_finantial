@@ -118,6 +118,13 @@ export default function Header({ onToggleSidebar }: { onToggleSidebar?: () => vo
     return userInfo.name.charAt(0).toUpperCase();
   };
 
+  const handleToggleSidebar = () => {
+    console.log('Header: Toggle sidebar button clicked');
+    if (onToggleSidebar) {
+      onToggleSidebar();
+    }
+  };
+
   return (
     <header className="bg-white shadow-sm">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
@@ -125,7 +132,7 @@ export default function Header({ onToggleSidebar }: { onToggleSidebar?: () => vo
           <div className="flex items-center">
             {onToggleSidebar && (
               <button
-                onClick={onToggleSidebar}
+                onClick={handleToggleSidebar}
                 className="mr-4 p-2 rounded-md text-gray-500 hover:text-gray-700 hover:bg-gray-100 focus:outline-none"
                 aria-label="Toggle sidebar"
               >

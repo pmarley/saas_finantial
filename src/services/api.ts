@@ -280,7 +280,7 @@ const transactionService: TransactionService = {
       
       console.log('Criando transação com userId:', userId);
       const response = await axios.post(
-        `https://truemetrics-n8n-n8n.b5glig.easypanel.host/webhook/transactions/create`,
+        `https://truemetrics-n8n-n8n.b5glig.easypanel.host/webhook/transaction/create`,
         transactionWithUserId,
         {
           headers: {
