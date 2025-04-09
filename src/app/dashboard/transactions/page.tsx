@@ -110,8 +110,8 @@ export default function TransactionsPage() {
 
       <NewTransactionModal
         isOpen={isModalOpen}
-        onClose={() => setIsModalOpen(false)}
-        onSuccess={handleNewTransactionSuccess}
+        onCloseAction={() => setIsModalOpen(false)}
+        onSuccessAction={handleNewTransactionSuccess}
       />
     </div>
   );

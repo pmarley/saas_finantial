@@ -8,14 +8,14 @@ import { categoryService } from '@/services/categoryService';
 
 type NewTransactionModalProps = {
   isOpen: boolean;
-  onClose: () => void;
-  onSuccess: () => void;
+  onCloseAction: () => void;
+  onSuccessAction: () => void;
 };
 
 export default function NewTransactionModal({
   isOpen,
-  onClose,
-  onSuccess,
+  onCloseAction,
+  onSuccessAction,
 }: NewTransactionModalProps) {
   const [description, setDescription] = useState('');
   const [amount, setAmount] = useState('');
@@ -110,11 +110,11 @@ export default function NewTransactionModal({
         setDate(new Date().toISOString().split('T')[0]);
         
         // Notificar o componente pai sobre o sucesso
-        onSuccess();
+        onSuccessAction();
         
         // Fechar o modal após um breve delay
         setTimeout(() => {
-          onClose();
+          onCloseAction();
           setSuccess(false);
         }, 1500);
       } else {
@@ -246,7 +246,7 @@ export default function NewTransactionModal({
           <div className="flex justify-end space-x-2">
             <button
               type="button"
-              onClick={onClose}
+              onClick={onCloseAction}
               className="px-4 py-2 border border-gray-300 rounded-md text-gray-700 hover:bg-gray-50"
               disabled={isSubmitting}
             >
