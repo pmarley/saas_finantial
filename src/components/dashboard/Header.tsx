@@ -1,8 +1,9 @@
 'use client';
 
 import React, { useState, useEffect } from 'react';
-import { usePathname } from 'next/navigation';
+import { usePathname, useRouter } from 'next/navigation';
 import { authService, userService } from '@/services/api';
+import Link from 'next/link';
 
 interface UserInfo {
   name: string;
@@ -11,18 +12,20 @@ interface UserInfo {
 
 export default function Header({ onToggleSidebar }: { onToggleSidebar?: () => void }) {
   const [isOpen, setIsOpen] = useState(false);
-  const [userInfo, setUserInfo] = useState<UserInfo>(() => {
-    // Inicializar com dados do localStorage, se disponíveis
-    const storedName = localStorage.getItem('userName');
-    const storedEmail = localStorage.getItem('userEmail');
-    return {
-      name: storedName || 'Usuário',
-      email: storedEmail || 'usuario@exemplo.com'
-    };
-  });
+  const [userInfo, setUserInfo] = useState<UserInfo>({ name: '', email: '' });
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const pathname = usePathname();
+  const router = useRouter();
+
+  useEffect(() => {
+    if (typeof window !== 'undefined') {
+      const storedUser = localStorage.getItem('user');
+      if (storedUser) {
+        setUserInfo(JSON.parse(storedUser));
+      }
+    }
+  }, []);
 
   useEffect(() => {
     const fetchUserInfo = async () => {
@@ -98,10 +101,11 @@ export default function Header({ onToggleSidebar }: { onToggleSidebar?: () => vo
   }, []);
 
   const handleLogout = () => {
-    console.log('Header: Iniciando logout');
-    authService.logout();
-    console.log('Header: Redirecionando para a página inicial');
-    window.location.href = '/';
+    if (typeof window !== 'undefined') {
+      localStorage.removeItem('user');
+      localStorage.removeItem('token');
+      router.push('/login');
+    }
   };
 
   const getPageTitle = () => {

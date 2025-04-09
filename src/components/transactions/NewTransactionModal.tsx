@@ -57,30 +57,21 @@ export default function NewTransactionModal({
       setLoading(true);
       setError(null);
       
-      // Verificar se o usuário está autenticado
-      const userId = localStorage.getItem('userId');
-      console.log('NewTransactionModal - userId:', userId);
-      
-      if (!userId) {
-        console.error('NewTransactionModal - Usuário não autenticado');
-        setError('Usuário não autenticado. Por favor, faça login novamente.');
-        return;
-      }
-      
-      console.log('NewTransactionModal - Carregando categorias para o modal de transação...');
-      const data = await categoryService.getCategories();
-      console.log('NewTransactionModal - Categorias carregadas:', data);
-      
-      if (Array.isArray(data) && data.length > 0) {
-        console.log('NewTransactionModal - Definindo categorias no estado:', data.length);
-        setCategories(data);
-      } else {
-        console.warn('NewTransactionModal - Nenhuma categoria retornada ou formato inválido');
-        setError('Não foi possível carregar as categorias. Por favor, tente novamente.');
+      if (typeof window !== 'undefined') {
+        const userId = localStorage.getItem('userId');
+        if (!userId) {
+          setError('Usuário não autenticado');
+          return;
+        }
+        
+        const data = await categoryService.getCategories();
+        if (Array.isArray(data)) {
+          setCategories(data);
+        }
       }
     } catch (err) {
-      console.error('NewTransactionModal - Erro ao carregar categorias:', err);
-      setError('Erro ao carregar categorias. Por favor, tente novamente.');
+      console.error('Erro ao carregar categorias:', err);
+      setError('Erro ao carregar categorias');
     } finally {
       setLoading(false);
     }
