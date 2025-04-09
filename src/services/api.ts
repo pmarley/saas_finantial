@@ -119,10 +119,28 @@ export const authService = {
       console.log('Login attempt with email:', credentials.email);
       const response = await axios.post('https://truemetrics-n8n-n8n.b5glig.easypanel.host/webhook/auth/login', credentials);
       console.log('Login response:', response.data);
-      if (!response.data.userId) {
-        console.error('Login response missing userId:', response.data);
+      
+      // Se a resposta é um array, pegar o primeiro item
+      const loginData = Array.isArray(response.data) ? response.data[0] : response.data;
+      
+      if (!loginData || !loginData.userId) {
+        console.error('Login response missing userId:', loginData);
+        throw new Error('Login response missing userId');
       }
-      return response.data;
+      
+      // Armazenar dados do usuário no localStorage
+      localStorage.setItem('authToken', loginData.token);
+      localStorage.setItem('userId', loginData.userId);
+      localStorage.setItem('userName', loginData.name);
+      localStorage.setItem('userEmail', loginData.email);
+      
+      console.log('User data stored in localStorage:', {
+        userId: loginData.userId,
+        name: loginData.name,
+        email: loginData.email
+      });
+      
+      return loginData;
     } catch (error) {
       console.error('Login error:', error);
       throw error;
@@ -166,17 +184,65 @@ export const authService = {
   
   async getUserById(userId: string): Promise<User> {
     try {
-      console.log('userService: Buscando usuário com ID:', userId);
+      console.log('authService: Buscando usuário com ID:', userId);
+      
+      if (!userId) {
+        console.error('authService: ID do usuário não fornecido');
+        throw new Error('ID do usuário é obrigatório');
+      }
+      
       const response = await axios.get(`https://truemetrics-n8n-n8n.b5glig.easypanel.host/webhook/user/getUserById?userId=${userId}`, {
         headers: {
           'Content-Type': 'application/json',
           'Accept': 'application/json'
         }
       });
-      console.log('userService: Resposta da API:', response.data);
-      return response.data;
+      
+      console.log('authService: Resposta da API:', response.data);
+      
+      // Verificar se a resposta contém os dados esperados
+      if (!response.data || typeof response.data !== 'object') {
+        console.error('authService: Resposta inválida da API:', response.data);
+        throw new Error('Resposta inválida da API');
+      }
+      
+      // Tentar obter dados do localStorage como fallback
+      const storedName = localStorage.getItem('userName');
+      const storedEmail = localStorage.getItem('userEmail');
+      
+      // Garantir que os dados retornados tenham o formato esperado
+      const userData = {
+        id: response.data.id || userId,
+        name: response.data.name || storedName || 'Usuário',
+        email: response.data.email || storedEmail || 'usuario@exemplo.com',
+        createdAt: response.data.createdAt || new Date().toISOString(),
+        updatedAt: response.data.updatedAt || new Date().toISOString()
+      };
+      
+      // Atualizar localStorage com os dados mais recentes
+      localStorage.setItem('userName', userData.name);
+      localStorage.setItem('userEmail', userData.email);
+      
+      console.log('authService: Dados do usuário processados:', userData);
+      return userData;
     } catch (error) {
       console.error('Get user by ID error:', error);
+      
+      // Tentar recuperar dados do localStorage em caso de erro
+      const storedName = localStorage.getItem('userName');
+      const storedEmail = localStorage.getItem('userEmail');
+      
+      if (storedName && storedEmail) {
+        console.log('authService: Usando dados do localStorage como fallback');
+        return {
+          id: userId,
+          name: storedName,
+          email: storedEmail,
+          createdAt: new Date().toISOString(),
+          updatedAt: new Date().toISOString()
+        };
+      }
+      
       throw error;
     }
   }
@@ -344,7 +410,32 @@ const userService = {
         }
       });
       console.log('userService: Resposta da API:', response.data);
-      return response.data;
+      
+      // Verificar se a resposta contém os dados esperados
+      if (!response.data) {
+        console.error('userService: Resposta inválida da API:', response.data);
+        throw new Error('Resposta inválida da API');
+      }
+      
+      // Se a resposta é um array, pegar o primeiro item
+      const userData = Array.isArray(response.data) ? response.data[0] : response.data;
+      
+      if (!userData || typeof userData !== 'object') {
+        console.error('userService: Dados do usuário inválidos:', userData);
+        throw new Error('Dados do usuário inválidos');
+      }
+      
+      // Garantir que os dados retornados tenham o formato esperado
+      const processedUserData = {
+        id: userData.id?.toString() || userId,
+        name: userData.name || 'Usuário',
+        email: userData.email || 'usuario@exemplo.com',
+        createdAt: userData.createdAt || new Date().toISOString(),
+        updatedAt: userData.updatedAt || new Date().toISOString()
+      };
+      
+      console.log('userService: Dados do usuário processados:', processedUserData);
+      return processedUserData;
     } catch (error) {
       console.error('Get user by ID error:', error);
       throw error;

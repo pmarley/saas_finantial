@@ -13,6 +13,7 @@ export default function AuthForm({ mode = 'login' }: AuthFormProps) {
   const [isLogin, setIsLogin] = useState(mode === 'login');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
+  const [confirmPassword, setConfirmPassword] = useState('');
   const [name, setName] = useState('');
   const [error, setError] = useState('');
   const [successMessage, setSuccessMessage] = useState('');
@@ -88,6 +89,14 @@ export default function AuthForm({ mode = 'login' }: AuthFormProps) {
       } else {
         if (!name) {
           throw new Error('Por favor, preencha seu nome');
+        }
+
+        if (password !== confirmPassword) {
+          throw new Error('As senhas não coincidem');
+        }
+
+        if (password.length < 6) {
+          throw new Error('A senha deve ter pelo menos 6 caracteres');
         }
 
         const credentials: RegisterCredentials = { email, password, name };
@@ -191,6 +200,23 @@ export default function AuthForm({ mode = 'login' }: AuthFormProps) {
         
         <form className="mt-8 space-y-6" onSubmit={handleSubmit}>
           <div className="rounded-md shadow-sm -space-y-px">
+            {!isLogin && (
+              <div>
+                <label htmlFor="name" className="sr-only">Nome completo</label>
+                <input
+                  id="name"
+                  name="name"
+                  type="text"
+                  autoComplete="name"
+                  required
+                  className="appearance-none rounded-none relative block w-full px-3 py-2 border border-gray-300 placeholder-gray-500 text-gray-900 rounded-t-md focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 focus:z-10 sm:text-sm"
+                  placeholder="Nome completo"
+                  value={name}
+                  onChange={(e) => setName(e.target.value)}
+                  disabled={isLoading}
+                />
+              </div>
+            )}
             <div>
               <label htmlFor="email-address" className="sr-only">Endereço de email</label>
               <input
@@ -199,7 +225,7 @@ export default function AuthForm({ mode = 'login' }: AuthFormProps) {
                 type="email"
                 autoComplete="email"
                 required
-                className="appearance-none rounded-none relative block w-full px-3 py-2 border border-gray-300 placeholder-gray-500 text-gray-900 rounded-t-md focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 focus:z-10 sm:text-sm"
+                className={`appearance-none rounded-none relative block w-full px-3 py-2 border border-gray-300 placeholder-gray-500 text-gray-900 ${isLogin ? 'rounded-t-md' : ''} focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 focus:z-10 sm:text-sm`}
                 placeholder="Endereço de email"
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
@@ -214,13 +240,30 @@ export default function AuthForm({ mode = 'login' }: AuthFormProps) {
                 type="password"
                 autoComplete={isLogin ? "current-password" : "new-password"}
                 required
-                className="appearance-none rounded-none relative block w-full px-3 py-2 border border-gray-300 placeholder-gray-500 text-gray-900 rounded-b-md focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 focus:z-10 sm:text-sm"
+                className={`appearance-none rounded-none relative block w-full px-3 py-2 border border-gray-300 placeholder-gray-500 text-gray-900 ${isLogin ? 'rounded-b-md' : ''} focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 focus:z-10 sm:text-sm`}
                 placeholder="Senha"
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
                 disabled={isLoading}
               />
             </div>
+            {!isLogin && (
+              <div>
+                <label htmlFor="confirm-password" className="sr-only">Confirmar senha</label>
+                <input
+                  id="confirm-password"
+                  name="confirm-password"
+                  type="password"
+                  autoComplete="new-password"
+                  required
+                  className="appearance-none rounded-none relative block w-full px-3 py-2 border border-gray-300 placeholder-gray-500 text-gray-900 rounded-b-md focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 focus:z-10 sm:text-sm"
+                  placeholder="Confirmar senha"
+                  value={confirmPassword}
+                  onChange={(e) => setConfirmPassword(e.target.value)}
+                  disabled={isLoading}
+                />
+              </div>
+            )}
           </div>
 
           <div>

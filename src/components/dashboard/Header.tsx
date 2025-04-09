@@ -11,9 +11,14 @@ interface UserInfo {
 
 export default function Header({ onToggleSidebar }: { onToggleSidebar?: () => void }) {
   const [isOpen, setIsOpen] = useState(false);
-  const [userInfo, setUserInfo] = useState<UserInfo>({
-    name: 'Usuário',
-    email: 'usuario@exemplo.com'
+  const [userInfo, setUserInfo] = useState<UserInfo>(() => {
+    // Inicializar com dados do localStorage, se disponíveis
+    const storedName = localStorage.getItem('userName');
+    const storedEmail = localStorage.getItem('userEmail');
+    return {
+      name: storedName || 'Usuário',
+      email: storedEmail || 'usuario@exemplo.com'
+    };
   });
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -25,64 +30,65 @@ export default function Header({ onToggleSidebar }: { onToggleSidebar?: () => vo
         setIsLoading(true);
         setError(null);
         
-        // Primeiro, tentar obter informações do localStorage
+        // Obter o ID do usuário do localStorage
+        const userId = localStorage.getItem('userId');
         const storedName = localStorage.getItem('userName');
         const storedEmail = localStorage.getItem('userEmail');
-        const userId = localStorage.getItem('userId');
         
-        // Definir valores padrão
-        const defaultUserInfo = {
-          name: 'Usuário',
-          email: 'usuario@exemplo.com'
-        };
+        console.log('Header: Dados do localStorage:', {
+          userId,
+          storedName,
+          storedEmail
+        });
         
-        // Se tiver dados no localStorage, usar eles
-        if (storedName && storedEmail) {
-          console.log('Header: Usando informações do localStorage');
-          setUserInfo({
-            name: storedName,
-            email: storedEmail
-          });
-        } else {
-          // Se não tiver no localStorage, usar valores padrão
-          setUserInfo(defaultUserInfo);
+        if (!userId) {
+          console.warn('Header: userId não encontrado no localStorage');
+          if (storedName && storedEmail) {
+            setUserInfo({
+              name: storedName,
+              email: storedEmail
+            });
+          }
+          setIsLoading(false);
+          return;
         }
         
-        // Se tiver userId, tentar buscar dados atualizados da API
-        if (userId) {
-          console.log('Header: Buscando informações do usuário da API');
-          try {
-            const userData = await authService.getUserById(userId);
+        // Buscar informações do usuário usando o userService
+        try {
+          console.log('Header: Buscando informações do usuário via userService');
+          const userData = await userService.getUserById(userId);
+          console.log('Header: Dados do usuário obtidos:', userData);
+          
+          if (userData) {
+            const updatedUserInfo = {
+              name: userData.name,
+              email: userData.email
+            };
             
-            if (userData?.name) {
-              console.log('Header: Informações do usuário obtidas com sucesso');
-              const updatedUserInfo = {
-                name: userData.name,
-                email: userData.email || defaultUserInfo.email
-              };
-              
-              setUserInfo(updatedUserInfo);
-              
-              // Atualizar localStorage
-              localStorage.setItem('userName', updatedUserInfo.name);
-              localStorage.setItem('userEmail', updatedUserInfo.email);
-            }
-          } catch (apiError) {
-            console.error('Header: Erro ao buscar dados da API:', apiError);
-            // Manter os dados do localStorage ou padrão que já foram definidos
+            console.log('Header: Informações atualizadas:', updatedUserInfo);
+            setUserInfo(updatedUserInfo);
+            
+            // Atualizar localStorage
+            localStorage.setItem('userName', updatedUserInfo.name);
+            localStorage.setItem('userEmail', updatedUserInfo.email);
           }
-        } else {
-          console.warn('Header: userId não encontrado no localStorage');
+        } catch (apiError) {
+          console.error('Header: Erro ao buscar dados do usuário via userService:', apiError);
+          
+          // Usar dados do localStorage como fallback
+          if (storedName && storedEmail) {
+            console.log('Header: Usando informações do localStorage como fallback');
+            setUserInfo({
+              name: storedName,
+              email: storedEmail
+            });
+          } else {
+            setError('Erro ao carregar informações do usuário');
+          }
         }
       } catch (error) {
         console.error('Header: Erro ao buscar informações do usuário:', error);
         setError(error instanceof Error ? error.message : 'Erro ao carregar informações do usuário');
-        
-        // Em caso de erro, usar valores padrão
-        setUserInfo({
-          name: 'Usuário',
-          email: 'usuario@exemplo.com'
-        });
       } finally {
         setIsLoading(false);
       }
@@ -150,19 +156,23 @@ export default function Header({ onToggleSidebar }: { onToggleSidebar?: () => vo
                 className="flex items-center space-x-3 focus:outline-none"
                 aria-label="Menu do usuário"
               >
-                <div className="w-10 h-10 rounded-full bg-gray-200 flex items-center justify-center">
+                <div className="w-10 h-10 rounded-full bg-indigo-100 flex items-center justify-center">
                   {isLoading ? (
-                    <div className="w-5 h-5 border-2 border-gray-300 border-t-gray-600 rounded-full animate-spin"></div>
+                    <div className="w-5 h-5 border-2 border-indigo-300 border-t-indigo-600 rounded-full animate-spin"></div>
                   ) : (
-                    <span className="text-gray-600 font-medium">{getUserInitial()}</span>
+                    <span className="text-indigo-600 font-medium">{getUserInitial()}</span>
                   )}
+                </div>
+                <div className="hidden md:block text-left">
+                  <p className="text-sm font-medium text-gray-700">{userInfo.name}</p>
+                  <p className="text-xs text-gray-500">{userInfo.email}</p>
                 </div>
               </button>
               {isOpen && (
-                <div className="absolute right-0 mt-2 w-48 bg-white rounded-md shadow-lg py-1 z-10">
-                  <div className="px-4 py-2 border-b">
+                <div className="absolute right-0 mt-2 w-64 bg-white rounded-md shadow-lg py-1 z-10">
+                  <div className="px-4 py-3 border-b">
                     <p className="text-sm font-medium text-gray-900">{userInfo.name}</p>
-                    <p className="text-sm text-gray-500">{userInfo.email}</p>
+                    <p className="text-sm text-gray-500 truncate">{userInfo.email}</p>
                   </div>
                   <button
                     onClick={handleLogout}

@@ -14,8 +14,19 @@ export default function TransactionList({ transactions }: TransactionListProps) 
   );
 
   // Função para formatar valores monetários
-  const formatCurrency = (value: number): string => {
-    return value.toLocaleString('pt-BR', {
+  const formatCurrency = (value: number | undefined | null): string => {
+    // Verifica se o valor é undefined, null, NaN ou não é um número
+    if (value === undefined || value === null || isNaN(value)) {
+      return 'R$ 0,00';
+    }
+    
+    // Converte para número e garante que é um valor válido
+    const numericValue = Number(value);
+    if (isNaN(numericValue)) {
+      return 'R$ 0,00';
+    }
+
+    return numericValue.toLocaleString('pt-BR', {
       style: 'currency',
       currency: 'BRL',
       minimumFractionDigits: 2,
@@ -25,7 +36,15 @@ export default function TransactionList({ transactions }: TransactionListProps) 
 
   // Função para formatar a data
   const formatDate = (dateString: string): string => {
-    return new Date(dateString).toLocaleDateString('pt-BR');
+    try {
+      const date = new Date(dateString);
+      if (isNaN(date.getTime())) {
+        return 'Data inválida';
+      }
+      return date.toLocaleDateString('pt-BR');
+    } catch (error) {
+      return 'Data inválida';
+    }
   };
 
   // Função para determinar a cor do tipo de transação
@@ -52,7 +71,7 @@ export default function TransactionList({ transactions }: TransactionListProps) 
       case 'investment':
         return 'Investimento';
       default:
-        return type;
+        return type || 'Desconhecido';
     }
   };
 
@@ -94,7 +113,7 @@ export default function TransactionList({ transactions }: TransactionListProps) 
                   {formatDate(transaction.date)}
                 </td>
                 <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                  {transaction.description}
+                  {transaction.description || 'Sem descrição'}
                 </td>
                 <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
                   {transaction.category || 'Sem categoria'}
