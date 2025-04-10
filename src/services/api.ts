@@ -170,6 +170,13 @@ export const authService = {
       return authResponse;
     } catch (error) {
       console.error('Registration error:', error);
+      if (axios.isAxiosError(error)) {
+        if (error.response?.status === 409) {
+          throw new Error('Este email já está cadastrado');
+        } else if (error.response?.status === 400) {
+          throw new Error('Dados inválidos. Verifique as informações e tente novamente');
+        }
+      }
       throw error;
     }
   },

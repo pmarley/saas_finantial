@@ -103,31 +103,30 @@ export default function AuthForm({ mode = 'login' }: AuthFormProps) {
         const response = await authService.register(credentials);
         console.log('AuthForm: Resposta do registro:', response);
         
-        if (!response) {
+        // Se temos um userId, o registro foi bem sucedido
+        if (response && response.userId) {
+          // Armazenar token apenas se ele existir
+          if (response.token) {
+            localStorage.setItem('authToken', response.token);
+          }
+          
+          // Armazenar ID do usuário
+          localStorage.setItem('userId', response.userId);
+          
+          // Armazenar informações do usuário
+          localStorage.setItem('userEmail', response.email || email);
+          localStorage.setItem('userName', response.name || name);
+          
+          console.log('AuthForm: Registro bem-sucedido, redirecionando...');
+          setSuccessMessage('Registro realizado com sucesso!');
+          
+          // Pequeno delay para mostrar a mensagem de sucesso
+          setTimeout(() => {
+            window.location.href = '/dashboard';
+          }, 500);
+        } else {
           throw new Error('Não foi possível realizar o registro. Tente novamente.');
         }
-
-        // Armazenar token apenas se ele existir
-        if (response.token) {
-          localStorage.setItem('authToken', response.token);
-        }
-        
-        // Armazenar ID do usuário
-        if (response.userId) {
-          localStorage.setItem('userId', response.userId);
-        }
-        
-        // Armazenar informações do usuário
-        localStorage.setItem('userEmail', response.email || email);
-        localStorage.setItem('userName', response.name || name);
-        
-        console.log('AuthForm: Registro bem-sucedido, redirecionando...');
-        setSuccessMessage('Registro realizado com sucesso!');
-        
-        // Pequeno delay para mostrar a mensagem de sucesso
-        setTimeout(() => {
-          window.location.href = '/dashboard';
-        }, 500);
       }
     } catch (err) {
       console.error('AuthForm: Erro de autenticação:', err);
