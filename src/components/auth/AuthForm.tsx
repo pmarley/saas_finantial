@@ -115,8 +115,6 @@ export default function AuthForm({ mode = 'login' }: AuthFormProps) {
         // Armazenar ID do usuário
         if (response.userId) {
           localStorage.setItem('userId', response.userId);
-        } else {
-          throw new Error('ID do usuário não recebido');
         }
         
         // Armazenar informações do usuário
@@ -136,12 +134,29 @@ export default function AuthForm({ mode = 'login' }: AuthFormProps) {
       let errorMessage = 'Ocorreu um erro ao processar sua solicitação';
       
       if (err instanceof Error) {
-        if (err.message.includes('401')) {
-          errorMessage = 'Email ou senha incorretos';
-        } else if (err.message.includes('Network Error')) {
-          errorMessage = 'Erro de conexão. Verifique sua internet e tente novamente.';
+        if (isLogin) {
+          if (err.message.includes('401')) {
+            errorMessage = 'Email ou senha incorretos';
+          } else if (err.message.includes('Network Error')) {
+            errorMessage = 'Erro de conexão. Verifique sua internet e tente novamente.';
+          } else {
+            errorMessage = err.message;
+          }
         } else {
-          errorMessage = err.message;
+          // Mensagens de erro específicas para registro
+          if (err.message.includes('Network Error')) {
+            errorMessage = 'Erro de conexão. Verifique sua internet e tente novamente.';
+          } else if (err.message.includes('409')) {
+            errorMessage = 'Este email já está cadastrado.';
+          } else if (err.message.includes('400')) {
+            errorMessage = 'Dados inválidos. Verifique as informações e tente novamente.';
+          } else if (err.message.includes('Por favor, preencha') || 
+                    err.message.includes('As senhas não coincidem') ||
+                    err.message.includes('A senha deve ter')) {
+            errorMessage = err.message;
+          } else {
+            errorMessage = 'Não foi possível realizar o registro. Tente novamente.';
+          }
         }
       }
       

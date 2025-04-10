@@ -7,6 +7,22 @@ const nextConfig = {
   distDir: '.next',
   generateEtags: false,
   compress: true,
+  webpack: (config, { isServer }) => {
+    return config;
+  },
+  async headers() {
+    return [
+      {
+        source: '/:path*',
+        headers: [
+          {
+            key: 'Cache-Control',
+            value: 'public, max-age=31536000, immutable',
+          },
+        ],
+      },
+    ];
+  },
   async rewrites() {
     return [
       {

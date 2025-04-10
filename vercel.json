@@ -23,15 +23,22 @@
     },
     {
       "src": "/api/(.*)",
-      "dest": "/api/$1"
+      "headers": {
+        "cache-control": "public, max-age=0, must-revalidate"
+      },
+      "continue": true
     },
     {
       "src": "/(.*)",
-      "dest": "/"
+      "headers": {
+        "cache-control": "public, max-age=0, must-revalidate"
+      },
+      "continue": true
     }
   ],
   "env": {
-    "NEXT_PUBLIC_API_URL": "https://truemetrics-n8n-n8n.b5glig.easypanel.host/webhook"
+    "NEXT_PUBLIC_API_URL": "https://truemetrics-n8n-n8n.b5glig.easypanel.host/webhook",
+    "NEXT_PUBLIC_N8N_API_URL": "https://truemetrics-n8n-n8n.b5glig.easypanel.host"
   },
   "buildCommand": "next build",
   "devCommand": "next dev",

@@ -8,6 +8,7 @@ import { Transaction } from '@/types/transaction';
 import { userService } from '@/services/api';
 import ErrorBoundary from '@/components/ErrorBoundary';
 import { TooltipProvider } from '@/components/ui/tooltip';
+import Link from 'next/link';
 
 type Summary = {
   current: {
@@ -344,7 +345,20 @@ export default function DashboardPage() {
               </div>
 
               {/* Transações Recentes */}
-              <RecentTransactions transactions={transactions} />
+              {transactions.length === 0 ? (
+                <div className="bg-white rounded-lg shadow p-6 text-center">
+                  <h2 className="text-lg font-medium text-gray-900 mb-2">Nenhuma Transação Encontrada</h2>
+                  <p className="text-sm text-gray-500 mb-4">Comece a registrar suas transações para ter um melhor controle financeiro.</p>
+                  <Link
+                    href="/dashboard/transactions"
+                    className="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500"
+                  >
+                    Adicionar Transação
+                  </Link>
+                </div>
+              ) : (
+                <RecentTransactions transactions={transactions} />
+              )}
             </div>
           )}
         </div>
