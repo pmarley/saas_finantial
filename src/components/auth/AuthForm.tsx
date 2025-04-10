@@ -107,12 +107,10 @@ export default function AuthForm({ mode = 'login' }: AuthFormProps) {
           throw new Error('Não foi possível realizar o registro. Tente novamente.');
         }
 
-        if (!response.token) {
-          throw new Error('Token de autenticação não recebido');
+        // Armazenar token apenas se ele existir
+        if (response.token) {
+          localStorage.setItem('authToken', response.token);
         }
-
-        // Armazenar token
-        localStorage.setItem('authToken', response.token);
         
         // Armazenar ID do usuário
         if (response.userId) {

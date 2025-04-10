@@ -152,10 +152,22 @@ export const authService = {
       console.log('Register attempt with email:', credentials.email);
       const response = await axios.post('https://truemetrics-n8n-n8n.b5glig.easypanel.host/webhook/auth/register', credentials);
       console.log('Register response:', response.data);
+      
+      // Verificar se a resposta contém os dados necessários
       if (!response.data.userId) {
         console.error('Register response missing userId:', response.data);
+        throw new Error('Resposta de registro inválida: ID do usuário não encontrado');
       }
-      return response.data;
+      
+      // Garantir que a resposta tenha o formato esperado
+      const authResponse: AuthResponse = {
+        token: response.data.token || '',
+        userId: response.data.userId,
+        name: response.data.name || credentials.name,
+        email: response.data.email || credentials.email
+      };
+      
+      return authResponse;
     } catch (error) {
       console.error('Registration error:', error);
       throw error;
