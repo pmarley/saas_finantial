@@ -24,7 +24,7 @@ export default function AuthForm({ mode = 'login' }: AuthFormProps) {
   useEffect(() => {
     const checkAuth = async () => {
       try {
-        const token = localStorage.getItem('authToken');
+        const token = localStorage.getItem('token');
         const userId = localStorage.getItem('userId');
         
         if (token && userId) {
@@ -66,7 +66,7 @@ export default function AuthForm({ mode = 'login' }: AuthFormProps) {
         }
 
         // Armazenar token
-        localStorage.setItem('authToken', response.token);
+        localStorage.setItem('token', response.token);
         
         // Armazenar ID do usuário
         if (response.userId) {
@@ -76,8 +76,10 @@ export default function AuthForm({ mode = 'login' }: AuthFormProps) {
         }
         
         // Armazenar informações do usuário
-        localStorage.setItem('userEmail', response.email || email);
-        localStorage.setItem('userName', response.name || email.split('@')[0]);
+        localStorage.setItem('user', JSON.stringify({
+          name: response.name || email.split('@')[0],
+          email: response.email || email
+        }));
         
         console.log('AuthForm: Login bem-sucedido, redirecionando...');
         setSuccessMessage('Login realizado com sucesso!');
@@ -100,66 +102,28 @@ export default function AuthForm({ mode = 'login' }: AuthFormProps) {
         }
 
         const credentials: RegisterCredentials = { email, password, name };
+        console.log('Iniciando registro com:', credentials);
         const response = await authService.register(credentials);
-        console.log('AuthForm: Resposta do registro:', response);
-        
-        // Se temos um userId, o registro foi bem sucedido
+        console.log('Resposta do registro:', response);
+
         if (response && response.userId) {
-          // Armazenar token apenas se ele existir
-          if (response.token) {
-            localStorage.setItem('authToken', response.token);
-          }
-          
-          // Armazenar ID do usuário
+          console.log('Registro bem sucedido, userId:', response.userId);
+          localStorage.setItem('token', response.token);
           localStorage.setItem('userId', response.userId);
-          
-          // Armazenar informações do usuário
-          localStorage.setItem('userEmail', response.email || email);
-          localStorage.setItem('userName', response.name || name);
-          
-          console.log('AuthForm: Registro bem-sucedido, redirecionando...');
+          localStorage.setItem('user', JSON.stringify({
+            name: response.name,
+            email: response.email
+          }));
           setSuccessMessage('Registro realizado com sucesso!');
-          
-          // Pequeno delay para mostrar a mensagem de sucesso
-          setTimeout(() => {
-            window.location.href = '/dashboard';
-          }, 500);
+          router.push('/dashboard');
         } else {
+          console.error('Resposta de registro inválida:', response);
           throw new Error('Não foi possível realizar o registro. Tente novamente.');
         }
       }
     } catch (err) {
-      console.error('AuthForm: Erro de autenticação:', err);
-      let errorMessage = 'Ocorreu um erro ao processar sua solicitação';
-      
-      if (err instanceof Error) {
-        if (isLogin) {
-          if (err.message.includes('401')) {
-            errorMessage = 'Email ou senha incorretos';
-          } else if (err.message.includes('Network Error')) {
-            errorMessage = 'Erro de conexão. Verifique sua internet e tente novamente.';
-          } else {
-            errorMessage = err.message;
-          }
-        } else {
-          // Mensagens de erro específicas para registro
-          if (err.message.includes('Network Error')) {
-            errorMessage = 'Erro de conexão. Verifique sua internet e tente novamente.';
-          } else if (err.message.includes('409')) {
-            errorMessage = 'Este email já está cadastrado.';
-          } else if (err.message.includes('400')) {
-            errorMessage = 'Dados inválidos. Verifique as informações e tente novamente.';
-          } else if (err.message.includes('Por favor, preencha') || 
-                    err.message.includes('As senhas não coincidem') ||
-                    err.message.includes('A senha deve ter')) {
-            errorMessage = err.message;
-          } else {
-            errorMessage = 'Não foi possível realizar o registro. Tente novamente.';
-          }
-        }
-      }
-      
-      setError(errorMessage);
+      console.error('Erro durante autenticação:', err);
+      setError(err instanceof Error ? err.message : 'Ocorreu um erro. Tente novamente.');
     } finally {
       setIsLoading(false);
     }

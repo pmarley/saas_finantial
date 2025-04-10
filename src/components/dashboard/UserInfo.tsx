@@ -26,9 +26,17 @@ export default function UserInfo() {
       setConnectionStatus(null);
       
       // Primeiro, tentar obter informações do localStorage
-      const storedName = localStorage.getItem('userName');
-      const storedEmail = localStorage.getItem('userEmail');
+      const storedUser = localStorage.getItem('user');
       const userId = localStorage.getItem('userId');
+      
+      let storedName = '';
+      let storedEmail = '';
+      
+      if (storedUser) {
+        const userData = JSON.parse(storedUser);
+        storedName = userData.name;
+        storedEmail = userData.email;
+      }
       
       if (!userId) {
         throw new Error('Usuário não autenticado');

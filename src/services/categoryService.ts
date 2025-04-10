@@ -81,14 +81,16 @@ export const categoryService = {
       const url = `${BASE_URL}/category/getCategories?userId=${userId}`;
       console.log('categoryService.getCategories - URL da requisição:', url);
       
+      const headers = {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${localStorage.getItem('token') || ''}`
+      };
+
       const response = await fetch(
         url,
         {
           method: 'GET',
-          headers: {
-            'Content-Type': 'application/json',
-            'Authorization': `Bearer ${localStorage.getItem('authToken') || ''}`
-          },
+          headers: headers,
         }
       );
 

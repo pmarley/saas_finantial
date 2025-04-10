@@ -20,13 +20,13 @@ export default function Header({ onToggleSidebar }: { onToggleSidebar?: () => vo
 
   useEffect(() => {
     if (typeof window !== 'undefined') {
-      const storedName = localStorage.getItem('userName');
-      const storedEmail = localStorage.getItem('userEmail');
+      const storedUser = localStorage.getItem('user');
       
-      if (storedName && storedEmail) {
+      if (storedUser) {
+        const userData = JSON.parse(storedUser);
         setUserInfo({
-          name: storedName,
-          email: storedEmail
+          name: userData.name,
+          email: userData.email
         });
       }
     }
@@ -38,10 +38,18 @@ export default function Header({ onToggleSidebar }: { onToggleSidebar?: () => vo
         setIsLoading(true);
         setError(null);
         
-        // Obter o ID do usuário do localStorage
+        // Obter o ID do usuário e dados do localStorage
         const userId = localStorage.getItem('userId');
-        const storedName = localStorage.getItem('userName');
-        const storedEmail = localStorage.getItem('userEmail');
+        const storedUser = localStorage.getItem('user');
+        
+        let storedName = '';
+        let storedEmail = '';
+        
+        if (storedUser) {
+          const userData = JSON.parse(storedUser);
+          storedName = userData.name;
+          storedEmail = userData.email;
+        }
         
         if (!userId) {
           if (storedName && storedEmail) {
@@ -67,8 +75,7 @@ export default function Header({ onToggleSidebar }: { onToggleSidebar?: () => vo
             setUserInfo(updatedUserInfo);
             
             // Atualizar localStorage
-            localStorage.setItem('userName', updatedUserInfo.name);
-            localStorage.setItem('userEmail', updatedUserInfo.email);
+            localStorage.setItem('user', JSON.stringify(updatedUserInfo));
           }
         } catch (apiError) {
           console.error('Erro ao buscar dados do usuário via userService:', apiError);
@@ -98,13 +105,6 @@ export default function Header({ onToggleSidebar }: { onToggleSidebar?: () => vo
     if (typeof window !== 'undefined') {
       // Usar o serviço de autenticação para fazer logout
       authService.logout();
-      
-      // Limpar todos os dados do usuário do localStorage
-      localStorage.removeItem('authToken');
-      localStorage.removeItem('userId');
-      localStorage.removeItem('userName');
-      localStorage.removeItem('userEmail');
-      localStorage.removeItem('user');
       
       // Redirecionar para a página de login
       router.push('/login');

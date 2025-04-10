@@ -118,31 +118,44 @@ export const authService = {
     try {
       console.log('Login attempt with email:', credentials.email);
       const response = await axios.post('https://truemetrics-n8n-n8n.b5glig.easypanel.host/webhook/auth/login', credentials);
-      console.log('Login response:', response.data);
+      console.log('Raw login response:', response.data);
       
       // Se a resposta é um array, pegar o primeiro item
-      const loginData = Array.isArray(response.data) ? response.data[0] : response.data;
+      const responseData = Array.isArray(response.data) ? response.data[0] : response.data;
+      console.log('Processed login response:', responseData);
       
-      if (!loginData || !loginData.userId) {
-        console.error('Login response missing userId:', loginData);
-        throw new Error('Login response missing userId');
+      if (!responseData || !responseData.userId) {
+        console.error('Invalid login response:', responseData);
+        throw new Error('Resposta de login inválida: ID do usuário não encontrado');
       }
       
+      // Garantir que a resposta tenha o formato esperado
+      const authResponse: AuthResponse = {
+        token: responseData.token || '',
+        userId: responseData.userId,
+        name: responseData.name || credentials.email.split('@')[0],
+        email: responseData.email || credentials.email
+      };
+      
       // Armazenar dados do usuário no localStorage
-      localStorage.setItem('authToken', loginData.token);
-      localStorage.setItem('userId', loginData.userId);
-      localStorage.setItem('userName', loginData.name);
-      localStorage.setItem('userEmail', loginData.email);
+      localStorage.setItem('token', authResponse.token);
+      localStorage.setItem('userId', authResponse.userId);
+      localStorage.setItem('user', JSON.stringify({
+        name: authResponse.name,
+        email: authResponse.email
+      }));
       
-      console.log('User data stored in localStorage:', {
-        userId: loginData.userId,
-        name: loginData.name,
-        email: loginData.email
-      });
-      
-      return loginData;
+      console.log('Formatted login response:', authResponse);
+      return authResponse;
     } catch (error) {
       console.error('Login error:', error);
+      if (axios.isAxiosError(error)) {
+        if (error.response?.status === 401) {
+          throw new Error('Email ou senha incorretos');
+        } else if (error.response?.status === 400) {
+          throw new Error('Dados inválidos. Verifique as informações e tente novamente');
+        }
+      }
       throw error;
     }
   },
@@ -151,22 +164,35 @@ export const authService = {
     try {
       console.log('Register attempt with email:', credentials.email);
       const response = await axios.post('https://truemetrics-n8n-n8n.b5glig.easypanel.host/webhook/auth/register', credentials);
-      console.log('Register response:', response.data);
+      console.log('Raw register response:', response.data);
+      
+      // Verificar se a resposta é um array e pegar o primeiro item
+      const responseData = Array.isArray(response.data) ? response.data[0] : response.data;
+      console.log('Processed register response:', responseData);
       
       // Verificar se a resposta contém os dados necessários
-      if (!response.data.userId) {
-        console.error('Register response missing userId:', response.data);
+      if (!responseData || !responseData.userId) {
+        console.error('Invalid register response:', responseData);
         throw new Error('Resposta de registro inválida: ID do usuário não encontrado');
       }
       
       // Garantir que a resposta tenha o formato esperado
       const authResponse: AuthResponse = {
-        token: response.data.token || '',
-        userId: response.data.userId,
-        name: response.data.name || credentials.name,
-        email: response.data.email || credentials.email
+        token: responseData.token || '',
+        userId: responseData.userId,
+        name: responseData.name || credentials.name,
+        email: responseData.email || credentials.email
       };
       
+      // Armazenar dados do usuário no localStorage
+      localStorage.setItem('token', authResponse.token);
+      localStorage.setItem('userId', authResponse.userId);
+      localStorage.setItem('user', JSON.stringify({
+        name: authResponse.name,
+        email: authResponse.email
+      }));
+      
+      console.log('Formatted register response:', authResponse);
       return authResponse;
     } catch (error) {
       console.error('Registration error:', error);
@@ -182,19 +208,20 @@ export const authService = {
   },
 
   logout(): void {
-    localStorage.removeItem('authToken');
+    localStorage.removeItem('token');
     localStorage.removeItem('userId');
+    localStorage.removeItem('user');
     delete api.defaults.headers.common['Authorization'];
     console.log('Logged out successfully');
   },
 
   isAuthenticated(): boolean {
-    const token = this.getToken();
+    const token = localStorage.getItem('token');
     return !!token;
   },
 
   getToken(): string | null {
-    return localStorage.getItem('authToken');
+    return localStorage.getItem('token');
   },
 
   getUserId(): string | null {
@@ -203,65 +230,28 @@ export const authService = {
   
   async getUserById(userId: string): Promise<User> {
     try {
-      console.log('authService: Buscando usuário com ID:', userId);
+      console.log('Fetching user data for userId:', userId);
+      const response = await axios.get(`https://truemetrics-n8n-n8n.b5glig.easypanel.host/webhook/getUserById?userId=${userId}`);
+      console.log('Raw user data response:', response.data);
       
-      if (!userId) {
-        console.error('authService: ID do usuário não fornecido');
-        throw new Error('ID do usuário é obrigatório');
+      // Se a resposta é um array, pegar o primeiro item
+      const userData = Array.isArray(response.data) ? response.data[0] : response.data;
+      console.log('Processed user data:', userData);
+      
+      if (!userData || !userData.id) {
+        console.error('Invalid user data response:', userData);
+        throw new Error('Dados do usuário inválidos');
       }
-      
-      const response = await axios.get(`https://truemetrics-n8n-n8n.b5glig.easypanel.host/webhook/user/getUserById?userId=${userId}`, {
-        headers: {
-          'Content-Type': 'application/json',
-          'Accept': 'application/json'
-        }
-      });
-      
-      console.log('authService: Resposta da API:', response.data);
-      
-      // Verificar se a resposta contém os dados esperados
-      if (!response.data || typeof response.data !== 'object') {
-        console.error('authService: Resposta inválida da API:', response.data);
-        throw new Error('Resposta inválida da API');
-      }
-      
-      // Tentar obter dados do localStorage como fallback
-      const storedName = localStorage.getItem('userName');
-      const storedEmail = localStorage.getItem('userEmail');
-      
-      // Garantir que os dados retornados tenham o formato esperado
-      const userData = {
-        id: response.data.id || userId,
-        name: response.data.name || storedName || 'Usuário',
-        email: response.data.email || storedEmail || 'usuario@exemplo.com',
-        createdAt: response.data.createdAt || new Date().toISOString(),
-        updatedAt: response.data.updatedAt || new Date().toISOString()
-      };
       
       // Atualizar localStorage com os dados mais recentes
-      localStorage.setItem('userName', userData.name);
-      localStorage.setItem('userEmail', userData.email);
+      localStorage.setItem('user', JSON.stringify({
+        name: userData.name,
+        email: userData.email
+      }));
       
-      console.log('authService: Dados do usuário processados:', userData);
       return userData;
     } catch (error) {
-      console.error('Get user by ID error:', error);
-      
-      // Tentar recuperar dados do localStorage em caso de erro
-      const storedName = localStorage.getItem('userName');
-      const storedEmail = localStorage.getItem('userEmail');
-      
-      if (storedName && storedEmail) {
-        console.log('authService: Usando dados do localStorage como fallback');
-        return {
-          id: userId,
-          name: storedName,
-          email: storedEmail,
-          createdAt: new Date().toISOString(),
-          updatedAt: new Date().toISOString()
-        };
-      }
-      
+      console.error('Error fetching user data:', error);
       throw error;
     }
   }
